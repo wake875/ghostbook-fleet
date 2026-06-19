@@ -1,0 +1,48 @@
+name: "磁盘写满攻击 - 20 VPS 分布式"
+
+on:
+  workflow_dispatch:
+    inputs:
+      duration:
+        description: '每个VPS运行时长(秒)'
+        required: false
+        default: '240'
+        type: string
+      threads:
+        description: '每个VPS线程数'
+        required: false
+        default: '3'
+        type: string
+
+jobs:
+  fill:
+    name: "VPS-${{ matrix.node_id }}"
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    strategy:
+      fail-fast: false
+      max-parallel: 20
+      matrix:
+        node_id: [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20]
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Display VPS info
+        run: |
+          echo "VPS IP: $(curl -s -m 5 ifconfig.me || echo 'N/A')"
+          echo "VPS ID: ${{ matrix.node_id }}"
+          echo "Duration: ${{ github.event.inputs.duration || '240' }}s"
+          echo "Threads: ${{ github.event.inputs.threads || '3' }}"
+
+      - name: Run disk fill attack
+        run: python3 disk_fill.py
+        env:
+          DURATION: ${{ github.event.inputs.duration || '240' }}
+          THREADS: ${{ github.event.inputs.threads || '3' }}
+          NODE_ID: ${{ matrix.node_id }}
+
+      - name: Done
+        if: always()
+        run: echo "VPS ${{ matrix.node_id }} finished"

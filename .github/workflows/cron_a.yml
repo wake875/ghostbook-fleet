@@ -1,0 +1,27 @@
+name: "Range v2 Cron A - 每2小时"
+
+on:
+  schedule:
+    - cron: '0 */2 * * *'
+  workflow_dispatch:
+
+jobs:
+  range:
+    name: "A-${{ matrix.node_id }}"
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      max-parallel: 10
+      matrix:
+        node_id: [1,2,3,4,5,6,7,8,9,10]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.11'}
+      - run: pip install aiohttp
+      - run: python3 range_v2.py
+        env:
+          DURATION: '1200'
+          CONCURRENT: '50'
+          NODE_ID: ${{ matrix.node_id }}

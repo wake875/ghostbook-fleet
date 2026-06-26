@@ -1,0 +1,27 @@
+name: "Range v2 自循环瘫痪攻击"
+
+on:
+  workflow_dispatch:
+
+jobs:
+  range:
+    name: "SUSTAIN-${{ matrix.node_id }}"
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      max-parallel: 20
+      matrix:
+        node_id: [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Run attack
+        run: python sustain_attack.py --attack-only
+      - name: Self re-trigger (only Node 1)
+        if: matrix.node_id == 1
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT }}
+        run: python sustain_attack.py --trigger-only
